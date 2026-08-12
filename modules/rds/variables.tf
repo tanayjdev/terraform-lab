@@ -92,3 +92,13 @@ variable "tags" {
   type    = map(string)
   default = {}
 }
+
+variable "alert_email" {
+  description = "Email to notify when RDS storage is low"
+  type        = string
+
+  validation {
+    condition     = can(regex("^[^@]+@[^@]+$", var.alert_email))
+    error_message = "alert_email must be a valid email address."
+  }
+}

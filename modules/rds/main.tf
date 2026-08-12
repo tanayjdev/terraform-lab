@@ -79,3 +79,86 @@ resource "aws_secretsmanager_secret" "rds_credentials" {
 
   tags = var.tags
 }
+
+resource "aws_db_instance" "this" {
+  identifier                = "${var.project_name}-db"
+  engine                    = "postgres"
+  engine_version            = var.engine_version
+  instance_class            = var.instance_class
+  allocated_storage         = var.allocated_storage
+  max_allocated_storage     = var.max_allocated_storage
+  storage_type              = "gp3"
+  storage_encrypted         = true
+  db_name                   = var.db_name
+  username                  = var.db_username
+  password                  = random_password.db_password.result
+  db_subnet_group_name      = aws_db_subnet_group.this.name
+  vpc_security_group_ids    = [aws_security_group.rds.id]
+  parameter_group_name      = aws_db_parameter_group.this.name
+  multi_az                  = var.multi_az
+  publicly_accessible       = false
+  backup_retention_period   = var.backup_retention_period
+  backup_window             = "03:00-04:00"
+  maintenance_window        = "mon:04:30-mon:05:30"
+  skip_final_snapshot       = var.skip_final_snapshot
+  final_snapshot_identifier = var.skip_final_snapshot ? null : "${var.project_name}-final-${formatdate("YYYYMMDDhhmmss", timestamp())}"
+  deletion_protection       = var.deletion_protection
+
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-db"
+  })
+
+  lifecycle {
+    ignore_changes = [password]
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "rds_credentials" {
+  secret_id = aws_secretsmanager_secret.rds_credentials.id
+
+  secret_string = jsonencode({
+    username = var.db_username
+    password = random_password.db_password.result
+    engine   = "postgres"
+    host     = aws_db_instance.this.address
+    port     = aws_db_instance.this.port
+    dbname   = var.db_name
+  })
+}
+
+resource "aws_sns_topic" "rds_alerts" {
+  name = "${var.project_name}-rds-alerts"
+
+  tags = var.tags
+}
+
+resource "aws_sns_topic_subscription" "rds_alerts_email" {
+  topic_arn = aws_sns_topic.rds_alerts.arn
+  protocol  = "email"
+  endpoint  = var.alert_email
+}
+
+resource "aws_cloudwatch_metric_alarm" "low_storage" {
+  alarm_name          = "${var.project_name}-rds-low-storage"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 1
+
+  metric_name = "FreeStorageSpace"
+  namespace   = "AWS/RDS"
+
+  period    = 300
+  statistic = "Average"
+  threshold = 2147483648
+
+  alarm_description = "RDS free storage below 2GB"
+
+  alarm_actions = [
+    aws_sns_topic.rds_alerts.arn
+  ]
+
+  dimensions = {
+    DBInstanceIdentifier = aws_db_instance.this.id
+  }
+
+  tags = var.tags
+}
