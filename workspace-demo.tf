@@ -33,15 +33,3 @@ locals {
 
   current_config = local.environment_config[terraform.workspace]
 }
-
-resource "aws_instance" "app" {
-  count = local.current_config.instance_count
-
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = local.current_config.instance_type
-
-  tags = {
-    Name        = "app-${terraform.workspace}-${count.index}"
-    Environment = terraform.workspace
-  }
-}
