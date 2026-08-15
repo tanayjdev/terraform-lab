@@ -2,7 +2,7 @@ module "github_oidc" {
   source = "./modules/github-oidc"
 
   github_org  = "tanayjdev"
-  github_repo = "terraform-mastery"
+  github_repo = "terraform-lab"
 
   thumbprint = "227203b5317f3818cab5b5ce596132bf36748c0e"
 }

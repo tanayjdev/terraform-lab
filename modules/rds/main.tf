@@ -107,10 +107,6 @@ resource "aws_db_instance" "this" {
   tags = merge(var.tags, {
     Name = "${var.project_name}-db"
   })
-
-  lifecycle {
-    ignore_changes = [password]
-  }
 }
 
 resource "aws_secretsmanager_secret_version" "rds_credentials" {
