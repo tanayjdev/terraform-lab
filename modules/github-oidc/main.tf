@@ -26,10 +26,8 @@ resource "aws_iam_role" "terraform_plan" {
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-        }
 
-        StringLike = {
-          "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}/${var.github_repo}:pull_request"
+          "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}@162029870/${var.github_repo}@1331031814:pull_request"
         }
       }
     }]
@@ -59,10 +57,8 @@ resource "aws_iam_role" "terraform_apply" {
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-        }
 
-        StringLike = {
-          "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}/${var.github_repo}:ref:refs/heads/main"
+          "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}@162029870/${var.github_repo}@1331031814:ref:refs/heads/main"
         }
       }
     }]
