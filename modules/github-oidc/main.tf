@@ -10,8 +10,14 @@ resource "aws_iam_openid_connect_provider" "github_actions" {
 
 # ─────────────────────────────────────────────────────────────
 # PLAN ROLE
-# Trust: ONLY pull requests from tanayjdev/terraform-lab
-# Permissions: ReadOnlyAccess + Terraform remote-state locking
+# Trust:
+#   ONLY pull_request OIDC tokens from tanayjdev/terraform-lab
+#   using this repository's current immutable subject format.
+#
+# Permissions:
+#   ReadOnlyAccess
+#   +
+#   Terraform remote-state S3/DynamoDB access
 # ─────────────────────────────────────────────────────────────
 
 resource "aws_iam_role" "terraform_plan" {
@@ -20,34 +26,42 @@ resource "aws_iam_role" "terraform_plan" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
 
-    Statement = [{
-      Effect = "Allow"
+    Statement = [
+      {
+        Effect = "Allow"
 
-      Principal = {
-        Federated = aws_iam_openid_connect_provider.github_actions.arn
-      }
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.github_actions.arn
+        }
 
-      Action = "sts:AssumeRoleWithWebIdentity"
+        Action = "sts:AssumeRoleWithWebIdentity"
 
-      Condition = {
-        StringEquals = {
-          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}/${var.github_repo}:pull_request"
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+
+            "token.actions.githubusercontent.com:sub" = "repo:tanayjdev@162029870/terraform-lab@1331031814:pull_request"
+          }
         }
       }
-    }]
+    ]
   })
 }
 
+# Read-only AWS permissions for Terraform PLAN.
 resource "aws_iam_role_policy_attachment" "plan_readonly" {
   role       = aws_iam_role.terraform_plan.name
   policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
 }
 
-# Terraform remote-state backend permissions for PLAN.
+# ─────────────────────────────────────────────────────────────
+# PLAN ROLE — Terraform remote state permissions
 #
-# DynamoDB is currently used for state locking by backend.tf.
-# S3 permissions are restricted to this project's state object/bucket.
+# backend.tf:
+#   S3 bucket  = tanayjdev-tf-state-2026-464975960111
+#   State key  = terraform-mastery/terraform.tfstate
+#   Lock table = terraform-state-locks
+# ─────────────────────────────────────────────────────────────
 
 resource "aws_iam_role_policy" "plan_backend" {
   name = "github-actions-terraform-plan-backend"
@@ -104,8 +118,16 @@ resource "aws_iam_role_policy" "plan_backend" {
 
 # ─────────────────────────────────────────────────────────────
 # APPLY ROLE
-# Trust: ONLY pushes to main
-# Permissions: AdministratorAccess ONLY for this learning setup
+# Trust:
+#   ONLY pushes to main
+#
+# Permissions:
+#   AdministratorAccess
+#
+# IMPORTANT:
+#   AdministratorAccess is intentionally being used only as the
+#   learning/demo shortcut described in the Aug 14 curriculum.
+#   It is NOT production-safe.
 # ─────────────────────────────────────────────────────────────
 
 resource "aws_iam_role" "terraform_apply" {
@@ -114,22 +136,25 @@ resource "aws_iam_role" "terraform_apply" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
 
-    Statement = [{
-      Effect = "Allow"
+    Statement = [
+      {
+        Effect = "Allow"
 
-      Principal = {
-        Federated = aws_iam_openid_connect_provider.github_actions.arn
-      }
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.github_actions.arn
+        }
 
-      Action = "sts:AssumeRoleWithWebIdentity"
+        Action = "sts:AssumeRoleWithWebIdentity"
 
-      Condition = {
-        StringEquals = {
-          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}/${var.github_repo}:ref:refs/heads/main"
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+
+            "token.actions.githubusercontent.com:sub" = "repo:tanayjdev@162029870/terraform-lab@1331031814:ref:refs/heads/main"
+          }
         }
       }
-    }]
+    ]
   })
 }
 
