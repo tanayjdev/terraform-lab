@@ -73,6 +73,14 @@ jobs:
       - name: Select Terraform workspace
         run: terraform workspace select dev
 
+      - name: Verify Terraform workspace
+        run: |
+          echo "Terraform workspace:"
+          terraform workspace show
+
+          echo "Terraform workspaces:"
+          terraform workspace list
+
       - name: Terraform validate
         run: terraform validate
 
@@ -136,6 +144,14 @@ jobs:
 
       - name: Select Terraform workspace
         run: terraform workspace select dev
+
+      - name: Verify Terraform workspace
+        run: |
+          echo "Terraform workspace:"
+          terraform workspace show
+
+          echo "Terraform workspaces:"
+          terraform workspace list
 
       - name: Terraform apply
         run: terraform apply -auto-approve
