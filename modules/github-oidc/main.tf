@@ -10,9 +10,12 @@ resource "aws_iam_openid_connect_provider" "github_actions" {
 
 # ─────────────────────────────────────────────────────────────
 # PLAN ROLE
+#
 # Trust:
-#   ONLY pull_request OIDC tokens from tanayjdev/terraform-lab
-#   using this repository's current immutable subject format.
+#   ONLY pull_request OIDC tokens from this GitHub repository.
+#
+# OIDC subject format currently issued by GitHub:
+#   repo:<org>@<org_id>/<repo>@<repo_id>:pull_request
 #
 # Permissions:
 #   ReadOnlyAccess
@@ -40,7 +43,7 @@ resource "aws_iam_role" "terraform_plan" {
           StringEquals = {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
 
-            "token.actions.githubusercontent.com:sub" = "repo:tanayjdev@162029870/terraform-lab@1331031814:pull_request"
+            "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}@${var.github_org_id}/${var.github_repo}@${var.github_repo_id}:pull_request"
           }
         }
       }
@@ -55,7 +58,7 @@ resource "aws_iam_role_policy_attachment" "plan_readonly" {
 }
 
 # ─────────────────────────────────────────────────────────────
-# PLAN ROLE — Terraform remote state permissions
+# PLAN ROLE — Terraform remote-state permissions
 #
 # backend.tf:
 #   S3 bucket  = tanayjdev-tf-state-2026-464975960111
@@ -118,15 +121,19 @@ resource "aws_iam_role_policy" "plan_backend" {
 
 # ─────────────────────────────────────────────────────────────
 # APPLY ROLE
+#
 # Trust:
-#   ONLY pushes to main
+#   ONLY pushes to main.
+#
+# OIDC subject format:
+#   repo:<org>@<org_id>/<repo>@<repo_id>:ref:refs/heads/main
 #
 # Permissions:
 #   AdministratorAccess
 #
 # IMPORTANT:
-#   AdministratorAccess is intentionally being used only as the
-#   learning/demo shortcut described in the Aug 14 curriculum.
+#   AdministratorAccess is intentionally used only as the
+#   learning/demo shortcut from the Aug 14 curriculum.
 #   It is NOT production-safe.
 # ─────────────────────────────────────────────────────────────
 
@@ -150,7 +157,7 @@ resource "aws_iam_role" "terraform_apply" {
           StringEquals = {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
 
-            "token.actions.githubusercontent.com:sub" = "repo:tanayjdev@162029870/terraform-lab@1331031814:ref:refs/heads/main"
+            "token.actions.githubusercontent.com:sub" = "repo:${var.github_org}@${var.github_org_id}/${var.github_repo}@${var.github_repo_id}:ref:refs/heads/main"
           }
         }
       }
