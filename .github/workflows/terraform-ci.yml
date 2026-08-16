@@ -68,7 +68,10 @@ jobs:
         run: terraform fmt -check -recursive
 
       - name: Terraform init
-        run: terraform init
+        run: terraform init -reconfigure
+
+      - name: Select Terraform workspace
+        run: terraform workspace select dev
 
       - name: Terraform validate
         run: terraform validate
@@ -129,7 +132,10 @@ jobs:
           aws-region: ap-south-1
 
       - name: Terraform init
-        run: terraform init
+        run: terraform init -reconfigure
+
+      - name: Select Terraform workspace
+        run: terraform workspace select dev
 
       - name: Terraform apply
         run: terraform apply -auto-approve
