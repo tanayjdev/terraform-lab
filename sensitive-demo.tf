@@ -1,14 +1,11 @@
 variable "db_password" {
-
-  type = string
-
+  type      = string
   sensitive = true
+  nullable  = true
+  default   = null
 }
 
 output "database_password" {
-
-  value = var.db_password
-
+  value     = var.db_password
   sensitive = true
-
 }

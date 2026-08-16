@@ -1,0 +1,135 @@
+name: Terraform CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '**.tf'
+      - '.github/workflows/terraform-ci.yml'
+
+  push:
+    branches: [main]
+    paths:
+      - '**.tf'
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  terraform-plan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.5"
+
+      # TEMPORARY OIDC DIAGNOSTIC
+      - name: Debug OIDC claims
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TOKEN="$(curl -sS \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com" \
+            | jq -r '.value')"
+
+          PAYLOAD="$(echo "$TOKEN" \
+            | cut -d '.' -f2 \
+            | tr '_-' '/+' \
+            | awk '{l=length($0)%4; if(l==2) $0=$0"=="; else if(l==3) $0=$0"="; print}' \
+            | base64 -d 2>/dev/null)"
+
+          echo "$PAYLOAD" | jq '{
+            sub,
+            aud,
+            repository,
+            repository_owner,
+            event_name,
+            ref,
+            base_ref,
+            head_ref,
+            environment
+          }'
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::464975960111:role/github-actions-terraform-plan
+          aws-region: ap-south-1
+
+      - name: Terraform fmt check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init
+        run: terraform init
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: TFLint
+        run: |
+          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+          tflint --init
+          tflint --recursive --minimum-failure-severity=error
+
+      - name: Terraform plan
+        id: plan
+        run: terraform plan -no-color
+        continue-on-error: true
+
+      - name: Post plan to PR
+        uses: actions/github-script@v7
+        env:
+          PLAN: ${{ steps.plan.outputs.stdout }}
+        with:
+          script: |
+            const truncated =
+              process.env.PLAN.length > 60000
+                ? process.env.PLAN.substring(0, 60000) +
+                  "\n\n... (truncated, see full log in Actions tab)"
+                : process.env.PLAN;
+
+            const output =
+              `#### Terraform Plan Result\n\`\`\`\n${truncated}\n\`\`\``;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+      - name: Fail job if plan failed
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+  terraform-apply:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.5"
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::464975960111:role/github-actions-terraform-apply
+          aws-region: ap-south-1
+
+      - name: Terraform init
+        run: terraform init
+
+      - name: Terraform apply
+        run: terraform apply -auto-approve

@@ -122,5 +122,6 @@ variable "servers" {
 ############################
 
 variable "flexible_config" {
-  type = any
+  type    = any
+  default = null
 }

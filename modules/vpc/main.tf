@@ -6,7 +6,8 @@ resource "aws_vpc" "this" {
   tags = merge(
     var.tags,
     {
-      Name = var.vpc_name
+      Name         = var.vpc_name
+      PipelineTest = "oidc-verification"
     }
   )
 }
