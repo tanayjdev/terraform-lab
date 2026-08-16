@@ -114,6 +114,17 @@ resource "aws_iam_role_policy" "plan_backend" {
             ]
           }
         }
+      },
+
+      # Terraform plan must refresh the secret version
+      {
+        Effect = "Allow"
+
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+
+        Resource = "arn:aws:secretsmanager:ap-south-1:464975960111:secret:terraform-mastery-rds-credentials-*"
       }
     ]
   })
