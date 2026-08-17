@@ -20,7 +20,7 @@ module "main_vpc" {
     "10.1.11.0/24"
   ]
 
-  enable_nat_gateway = false
+  enable_nat_gateway = true
 
   tags = {
     Project     = "terraform-mastery"

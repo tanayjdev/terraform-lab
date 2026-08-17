@@ -4,7 +4,7 @@ module "rds" {
   project_name          = "terraform-mastery"
   vpc_id                = module.main_vpc.vpc_id
   private_subnet_ids    = module.main_vpc.private_subnet_ids
-  app_security_group_id = module.web_server.security_group_id
+  app_security_group_id = module.asg.app_security_group_id
   alert_email           = "tanayj489@gmail.com"
 
   # Use the PostgreSQL version that actually succeeded in your
