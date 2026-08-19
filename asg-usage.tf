@@ -1,3 +1,18 @@
+data "aws_ami" "latest_packer_build" {
+  most_recent = true
+  owners      = ["self"]
+
+  filter {
+    name   = "tag:BuiltBy"
+    values = ["Packer"]
+  }
+
+  filter {
+    name   = "state"
+    values = ["available"]
+  }
+}
+
 module "asg" {
   source = "./modules/asg"
 
@@ -11,6 +26,8 @@ module "asg" {
 
   alb_security_group_id = module.alb.alb_security_group_id
 
+  ami_id = data.aws_ami.latest_packer_build.id
+
   min_size         = 1
   max_size         = 3
   desired_capacity = 1
@@ -18,19 +35,15 @@ module "asg" {
   user_data = <<-EOF
     #!/bin/bash
 
-    apt-get update -y
-    apt-get install -y nginx
+    docker run -d \
+      -p 5000:80 \
+      --restart always \
+      --name app \
+      nginx:alpine
 
-    # Aug 15 ALB target group listens on port 5000.
-    # Make nginx listen on the same port.
-    sed -i 's/listen 80 default_server;/listen 5000 default_server;/' /etc/nginx/sites-available/default
-    sed -i 's/listen \[::\]:80 default_server;/listen [::]:5000 default_server;/' /etc/nginx/sites-available/default
+    sleep 5
 
-    echo "OK" > /var/www/html/health
-
-    nginx -t
-    systemctl enable nginx
-    systemctl restart nginx
+    docker exec app sh -c 'echo "OK" > /usr/share/nginx/html/health'
   EOF
 
   tags = {
