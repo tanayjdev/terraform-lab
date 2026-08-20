@@ -1,0 +1,66 @@
+---
+- name: Deploy Flask app container with RDS credentials from Secrets Manager
+  hosts: all
+  become: true
+
+  vars:
+    app_image: "tanayjain29/flask-devops-app:latest"
+    container_name: "flask-app"
+
+  tasks:
+    - name: Fetch and parse RDS credentials from Secrets Manager
+      set_fact:
+        db_creds: "{{ lookup('amazon.aws.secretsmanager_secret', secret_arn) | from_json }}"
+      no_log: true
+
+    - name: Pull latest app image
+      community.docker.docker_image:
+        name: "{{ app_image }}"
+        source: pull
+      register: image_pull
+
+    - name: Stop and remove existing container (if running an older version)
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        state: absent
+      when: image_pull.changed
+
+    - name: Run app container with credentials as environment variables
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        image: "{{ app_image }}"
+        state: started
+        restart_policy: always
+        ports:
+          - "5000:5000"
+        env:
+          DB_HOST: "{{ db_creds.host }}"
+          DB_NAME: "{{ db_creds.dbname }}"
+          DB_USER: "{{ db_creds.username }}"
+          DB_PASSWORD: "{{ db_creds.password }}"
+          DB_PORT: "{{ db_creds.port | string }}"
+      no_log: true
+
+    - name: Wait for app health endpoint to respond
+      uri:
+        url: "http://localhost:5000/health"
+        status_code: 200
+      register: health_check
+      until: health_check.status == 200
+      retries: 10
+      delay: 5
+
+    - name: Confirm deployment success
+      debug:
+        msg: "App deployed and healthy — {{ app_image }}"
+
+    - name: Notify Slack on successful deployment
+      uri:
+        url: "{{ slack_webhook_url }}"
+        method: POST
+        body_format: json
+        body:
+          text: "✅ Deployed {{ app_image }} to {{ inventory_hostname }}"
+        status_code: 200
+      delegate_to: localhost
+      when: slack_webhook_url is defined
