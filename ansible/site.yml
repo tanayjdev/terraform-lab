@@ -1,0 +1,26 @@
+---
+- name: Verify base image and prepare for deployment
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Confirm Docker is installed (baked by Packer)
+      command: docker --version
+      register: docker_check
+      changed_when: false
+
+    - name: Show Docker version found
+      debug:
+        var: docker_check.stdout
+
+    - name: Ensure Docker service is running and enabled
+      systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Create app directory
+      file:
+        path: /opt/app
+        state: directory
+        mode: "0755"
