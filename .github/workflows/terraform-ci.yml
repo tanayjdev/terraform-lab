@@ -64,7 +64,7 @@ jobs:
 
       - name: Terraform plan
         id: plan
-        run: terraform plan -no-color
+        run: terraform plan -no-color -input=false -var-file=environments/dev.tfvars
         continue-on-error: true
 
       - name: Post plan to PR
@@ -129,7 +129,7 @@ jobs:
           terraform workspace list
 
       - name: Terraform plan
-        run: terraform plan -no-color
+        run: terraform plan -no-color -input=false -var-file=environments/dev.tfvars
 
       - name: Terraform apply
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -input=false -var-file=environments/dev.tfvars
