@@ -4,15 +4,12 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - '**.tf'
-      - '**.pkr.hcl'
-      - '.github/workflows/terraform-ci.yml'
+      - '**'
 
   push:
     branches: [main]
     paths:
-      - '**.tf'
-      - '.github/workflows/terraform-ci.yml'
+      - '**'
 
 permissions:
   id-token: write
