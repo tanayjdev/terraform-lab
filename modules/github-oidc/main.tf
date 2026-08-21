@@ -124,7 +124,7 @@ resource "aws_iam_role_policy" "plan_backend" {
           "secretsmanager:GetSecretValue"
         ]
 
-        Resource = "arn:aws:secretsmanager:ap-south-1:464975960111:secret:terraform-mastery-rds-credentials-*"
+        Resource = "arn:aws:secretsmanager:ap-south-1:464975960111:secret:terraform-mastery-*-rds-credentials-*"
       }
     ]
   })

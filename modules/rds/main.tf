@@ -16,6 +16,10 @@ resource "aws_db_subnet_group" "this" {
   name       = "${var.project_name}-db-subnet-group"
   subnet_ids = var.private_subnet_ids
 
+  lifecycle {
+    create_before_destroy = true
+  }
+
   tags = merge(var.tags, {
     Name = "${var.project_name}-db-subnet-group"
   })
@@ -28,6 +32,10 @@ resource "aws_security_group" "rds" {
   name        = "${var.project_name}-rds-sg"
   description = "Allow PostgreSQL only from the application security group"
   vpc_id      = var.vpc_id
+
+  lifecycle {
+    create_before_destroy = true
+  }
 
   ingress {
     description     = "PostgreSQL from app tier"
@@ -56,6 +64,10 @@ resource "aws_db_parameter_group" "this" {
   name   = "${var.project_name}-pg-params"
   family = "postgres15"
 
+  lifecycle {
+    create_before_destroy = true
+  }
+
   parameter {
     name  = "log_connections"
     value = "1"
@@ -81,6 +93,10 @@ resource "aws_secretsmanager_secret" "rds_credentials" {
 }
 
 resource "aws_db_instance" "this" {
+  lifecycle {
+    create_before_destroy = true
+  }
+
   identifier                = "${var.project_name}-db"
   engine                    = "postgres"
   engine_version            = var.engine_version

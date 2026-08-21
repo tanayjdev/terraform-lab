@@ -16,7 +16,7 @@ data "aws_ami" "latest_packer_build" {
 module "asg" {
   source = "./modules/asg"
 
-  project_name = "terraform-mastery"
+  project_name = "terraform-mastery-${var.environment_name}"
 
   vpc_id = module.main_vpc.vpc_id
 
@@ -28,9 +28,10 @@ module "asg" {
 
   ami_id = data.aws_ami.latest_packer_build.id
 
-  min_size         = 1
-  max_size         = 3
-  desired_capacity = 1
+  instance_type    = var.asg_instance_type
+  min_size         = var.asg_min_size
+  max_size         = var.asg_max_size
+  desired_capacity = var.asg_desired_capacity
 
   user_data = <<-EOF
     #!/bin/bash
@@ -48,7 +49,7 @@ module "asg" {
 
   tags = {
     Project     = "terraform-mastery"
-    Environment = terraform.workspace
+    Environment = var.environment_name
   }
 }
 
