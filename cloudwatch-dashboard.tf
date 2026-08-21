@@ -1,5 +1,5 @@
 resource "aws_cloudwatch_dashboard" "main" {
-  dashboard_name = "terraform-mastery-overview"
+  dashboard_name = "terraform-mastery-${var.environment_name}-overview"
 
   dashboard_body = jsonencode({
     widgets = [
@@ -64,7 +64,7 @@ resource "aws_cloudwatch_dashboard" "main" {
               "AWS/RDS",
               "DatabaseConnections",
               "DBInstanceIdentifier",
-              "terraform-mastery-db"
+              "terraform-mastery-${var.environment_name}-db"
             ]
           ]
 

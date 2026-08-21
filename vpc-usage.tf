@@ -1,9 +1,9 @@
 module "main_vpc" {
   source = "./modules/vpc"
 
-  vpc_name = "august-terraform-vpc"
+  vpc_name = "terraform-mastery-${var.environment_name}"
 
-  vpc_cidr = "10.1.0.0/16"
+  vpc_cidr = var.vpc_cidr_base
 
   azs = [
     "ap-south-1a",
@@ -11,20 +11,20 @@ module "main_vpc" {
   ]
 
   public_subnet_cidrs = [
-    "10.1.1.0/24",
-    "10.1.2.0/24"
+    cidrsubnet(var.vpc_cidr_base, 8, 1),
+    cidrsubnet(var.vpc_cidr_base, 8, 2)
   ]
 
   private_subnet_cidrs = [
-    "10.1.10.0/24",
-    "10.1.11.0/24"
+    cidrsubnet(var.vpc_cidr_base, 8, 10),
+    cidrsubnet(var.vpc_cidr_base, 8, 11)
   ]
 
   enable_nat_gateway = true
 
   tags = {
     Project     = "terraform-mastery"
-    Environment = "learning"
+    Environment = var.environment_name
   }
 }
 
