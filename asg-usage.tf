@@ -52,23 +52,3 @@ module "asg" {
     Environment = var.environment_name
   }
 }
-
-output "app_security_group_id" {
-  description = "ID of the application security group"
-  value       = module.asg.app_security_group_id
-}
-
-output "asg_name" {
-  description = "Name of the application Auto Scaling Group"
-  value       = module.asg.asg_name
-}
-
-output "launch_template_id" {
-  description = "ID of the application Launch Template"
-  value       = module.asg.launch_template_id
-}
-
-output "target_group_arn" {
-  description = "ARN of the ALB target group used by the Auto Scaling Group"
-  value       = module.alb.target_group_arn
-}

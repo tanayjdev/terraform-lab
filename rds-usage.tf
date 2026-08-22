@@ -23,15 +23,3 @@ module "rds" {
     ManagedBy   = "Terraform"
   }
 }
-
-output "rds_endpoint" {
-  value = module.rds.db_endpoint
-}
-
-output "rds_secret_arn" {
-  value = module.rds.secret_arn
-}
-
-output "rds_security_group_id" {
-  value = module.rds.rds_security_group_id
-}

@@ -13,11 +13,3 @@ module "alb" {
     Environment = terraform.workspace
   }
 }
-
-output "alb_url" {
-  value = "http://${module.alb.alb_dns_name}"
-}
-
-output "alb_target_group_arn" {
-  value = module.alb.target_group_arn
-}
