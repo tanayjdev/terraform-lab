@@ -27,15 +27,3 @@ module "main_vpc" {
     Environment = var.environment_name
   }
 }
-
-output "vpc_id" {
-  value = module.main_vpc.vpc_id
-}
-
-output "public_subnets" {
-  value = module.main_vpc.public_subnet_ids
-}
-
-output "private_subnets" {
-  value = module.main_vpc.private_subnet_ids
-}
